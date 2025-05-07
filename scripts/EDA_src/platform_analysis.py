@@ -180,9 +180,11 @@ def create_conceptual_model(df, constructs):
     Create an enhanced visualization of the online purchase intention conceptual model
     with correlation information and styling improvements
     """
+    from matplotlib.patches import FancyBboxPatch  # Import this for rounded rectangles
+
     # Create figure with improved size and background
     plt.figure(figsize=(14, 10), facecolor='#f9f9f9')
-    plt.title('Online Purchase Intention Conceptual Model', fontsize=20, fontweight='bold', pad=20)
+    plt.title('Conceptual Model Visualization', fontsize=20, fontweight='bold', pad=20)
     
     # Set up axes with more space
     ax = plt.gca()
@@ -223,7 +225,7 @@ def create_conceptual_model(df, constructs):
         'opi': (8, 5, 'Online Purchase\nIntention')
     }
     
-    # Draw rectangles with improved styling
+    # Draw rectangles with improved styling - using FancyBboxPatch instead of Rectangle
     for construct, (x, y, label) in constructs_coords.items():
         if construct == 'att' or construct == 'risk':
             # Highlight mediator variables
@@ -238,13 +240,14 @@ def create_conceptual_model(df, constructs):
             facecolor = '#E6E6FA'  # Lavender
             edgewidth = 1.5
             
-        rect = Rectangle(
+        # Use FancyBboxPatch instead of Rectangle for rounded corners
+        rect = FancyBboxPatch(
             (x-1, y-0.5), 2, 1, 
+            boxstyle="round,pad=0.3",
             facecolor=facecolor, 
             alpha=0.9, 
             edgecolor='black',
             linewidth=edgewidth,
-            boxstyle="round,pad=0.3",
             zorder=1
         )
         ax.add_patch(rect)
@@ -330,8 +333,8 @@ def create_conceptual_model(df, constructs):
     
     # Add a research context note
     note_text = (
-        'Note: This model illustrates key relationships in online purchase intention.'
-        '\nArrows indicate causal paths, with correlation values (r) where available.'
+        'Note: This model illustrates key relationships in online purchase intention.\n'
+        'Arrows indicate causal paths, with correlation values (r) where available.'
     )
     plt.figtext(0.98, 0.02, note_text, fontsize=9, ha='right',
                 bbox=dict(facecolor='white', alpha=0.8, boxstyle='round,pad=0.5'))
