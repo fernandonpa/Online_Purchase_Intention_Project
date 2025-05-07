@@ -124,3 +124,59 @@ def bivariate_categorical_numeric(df, cat_col, num_col, figsize=(12, 6)):
             print(f"There is a statistically significant difference in {num_col} across {cat_col} groups (p < 0.05).")
         else:
             print(f"There is no statistically significant difference in {num_col} across {cat_col} groups (p >= 0.05).")
+
+def bivariate_categorical_categorical(df, cat_col1, cat_col2, figsize=(12, 8)):
+    """
+    Perform bivariate analysis for two categorical variables
+    """
+    # Check if either variable has too many categories
+    n_cat1 = df[cat_col1].nunique()
+    n_cat2 = df[cat_col2].nunique()
+    
+    if n_cat1 > 10 or n_cat2 > 10:
+        print(f"Warning: {cat_col1} has {n_cat1} categories and {cat_col2} has {n_cat2} categories.")
+        print("Limiting to top categories by frequency.")
+        
+        if n_cat1 > 10:
+            top_cat1 = df[cat_col1].value_counts().nlargest(10).index
+            df_subset = df[df[cat_col1].isin(top_cat1)].copy()
+        else:
+            df_subset = df.copy()
+            
+        if n_cat2 > 10:
+            top_cat2 = df_subset[cat_col2].value_counts().nlargest(10).index
+            df_subset = df_subset[df_subset[cat_col2].isin(top_cat2)].copy()
+    else:
+        df_subset = df.copy()
+    
+    # Create contingency table
+    contingency_table = pd.crosstab(
+        df_subset[cat_col1], 
+        df_subset[cat_col2],
+        normalize='all'
+    ) * 100  # Convert to percentages
+    
+    plt.figure(figsize=figsize)
+    
+    # Heatmap of the contingency table
+    sns.heatmap(contingency_table, annot=True, fmt='.1f', cmap='YlGnBu', linewidths=.5)
+    plt.title(f'Heatmap of {cat_col1} vs {cat_col2} (% of Total)')
+    plt.tight_layout()
+    plt.show()
+    
+    # Chi-square test for independence
+    contingency = pd.crosstab(df_subset[cat_col1], df_subset[cat_col2])
+    chi2, p, dof, expected = stats.chi2_contingency(contingency)
+    
+    print("\nContingency Table (Counts):")
+    print(contingency)
+    
+    print("\nChi-square Test for Independence:")
+    print(f"Chi-square value: {chi2:.4f}")
+    print(f"p-value: {p:.4f}")
+    print(f"Degrees of freedom: {dof}")
+    
+    if p < 0.05:
+        print(f"There is a statistically significant association between {cat_col1} and {cat_col2} (p < 0.05).")
+    else:
+        print(f"There is no statistically significant association between {cat_col1} and {cat_col2} (p >= 0.05).")
