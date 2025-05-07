@@ -143,3 +143,96 @@ def analyze_platform_usage(df):
         plt.xticks(rotation=45)
         plt.tight_layout()
         plt.show()
+
+def correlation_analysis(df, constructs):
+    """
+    Perform correlation analysis between key constructs
+    """
+    print("\n" + "="*80)
+    print("CORRELATION ANALYSIS BETWEEN CONSTRUCTS")
+    print("="*80)
+    
+    # Get average scores for each construct
+    avg_cols = [col for col in df.columns if col.endswith('avg')]
+    
+    if len(avg_cols) >= 2:
+        # Correlation matrix for construct averages
+        correlation_matrix(df, avg_cols, title='Correlation between Constructs')
+    
+    # Correlation between key constructs and outcomes
+    outcome_vars = constructs['opi']
+    predictor_vars = []
+    
+    # Collect one variable from each construct for simplicity
+    for construct_name in ['peou', 'pu', 'sa', 'si', 'att', 'risk']:
+        if constructs[construct_name]:
+            predictor_vars.append(constructs[construct_name][0])
+    
+    # Create correlation matrix between predictors and outcomes
+    all_vars = predictor_vars + outcome_vars
+    if len(all_vars) >= 2:
+        correlation_matrix(df, all_vars, title='Correlation between Predictors and Outcomes')
+
+def multivariate_analysis(df, constructs):
+    """
+    Perform advanced multivariate analysis
+    """
+    print("\n" + "="*80)
+    print("ADVANCED MULTIVARIATE ANALYSIS")
+    print("="*80)
+    
+    # PCA on main constructs
+    main_vars = []
+    for construct_name in ['peou', 'pu', 'sa', 'si', 'att', 'risk']:
+        main_vars.extend(constructs[construct_name])
+    
+    if len(main_vars) >= 3:
+        pca_analysis(df, main_vars, n_components=3)
+    
+    # Cluster analysis on outcome variables
+    outcome_vars = constructs['opi']
+    if len(outcome_vars) >= 2:
+        cluster_analysis(df, outcome_vars)
+    
+    # Create a visualization of the conceptual model
+    plt.figure(figsize=(12, 8))
+    plt.title('Conceptual Model Visualization', fontsize=16)
+    
+    # Draw conceptual model (simplified)
+    ax = plt.gca()
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 10)
+    ax.axis('off')
+    
+    # Draw boxes for constructs
+    constructs_coords = {
+        'peou': (2, 8, 'Perceived\nEase of Use'),
+        'pu': (2, 6, 'Perceived\nUsefulness'),
+        'sa': (2, 4, 'Structural\nAssurance'),
+        'si': (2, 2, 'Social\nInfluence'),
+        'att': (5, 5, 'Attitude'),
+        'risk': (5, 3, 'Perceived\nRisk'),
+        'opi': (8, 5, 'Online Purchase\nIntention')
+    }
+    
+    # Draw rectangles
+    for construct, (x, y, label) in constructs_coords.items():
+        rect = Rectangle((x-1, y-0.5), 2, 1, facecolor='lightblue', alpha=0.8, edgecolor='black')
+        ax.add_patch(rect)
+        ax.text(x, y, label, ha='center', va='center', fontweight='bold')
+    
+    # Draw arrows
+    arrows = [
+        (3, 8, 5, 5.2),  # PEOU -> ATT
+        (3, 6, 5, 4.8),  # PU -> ATT
+        (3, 4, 5, 4.4),  # SA -> ATT
+        (3, 2, 5, 3.6),  # SI -> ATT
+        (6, 5, 8, 5.2),  # ATT -> OPI
+        (6, 3, 8, 4.8)   # RISK -> OPI
+    ]
+    
+    for x1, y1, x2, y2 in arrows:
+        ax.arrow(x1, y1, x2-x1-0.2, y2-y1, head_width=0.1, head_length=0.1, fc='black', ec='black', length_includes_head=True)
+    
+    plt.tight_layout()
+    plt.show()
