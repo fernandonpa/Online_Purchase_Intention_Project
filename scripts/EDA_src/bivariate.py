@@ -70,3 +70,57 @@ def bivariate_numeric_numeric(df, x_col, y_col, figsize=(10, 6)):
     significance = "statistically significant" if pearson_p < 0.05 else "not statistically significant"
     
     print(f"There is a {strength} {direction} correlation ({pearson_corr:.3f}) that is {significance} (p={pearson_p:.4f}).")
+
+def bivariate_categorical_numeric(df, cat_col, num_col, figsize=(12, 6)):
+    """
+    Perform bivariate analysis for categorical and numeric variables
+    """
+    plt.figure(figsize=figsize)
+    
+    # Check if categorical variable has too many categories
+    n_categories = df[cat_col].nunique()
+    if n_categories > 10:
+        print(f"Warning: {cat_col} has {n_categories} categories. Showing only top 10 by frequency.")
+        top_cats = df[cat_col].value_counts().nlargest(10).index
+        df_subset = df[df[cat_col].isin(top_cats)].copy()
+    else:
+        df_subset = df.copy()
+    
+    # Create a subplot grid
+    gs = plt.GridSpec(1, 2)
+    
+    # Box plot
+    ax0 = plt.subplot(gs[0, 0])
+    sns.boxplot(x=cat_col, y=num_col, data=df_subset, ax=ax0)
+    ax0.set_title(f'Boxplot: {num_col} by {cat_col}')
+    plt.xticks(rotation=45, ha='right')
+    
+    # Violin plot
+    ax1 = plt.subplot(gs[0, 1])
+    sns.violinplot(x=cat_col, y=num_col, data=df_subset, ax=ax1)
+    ax1.set_title(f'Violin plot: {num_col} by {cat_col}')
+    plt.xticks(rotation=45, ha='right')
+    
+    plt.tight_layout()
+    plt.show()
+    
+    # Calculate and display statistics
+    print("\nGroup Statistics:")
+    group_stats = df_subset.groupby(cat_col)[num_col].agg(['count', 'mean', 'std', 'min', 'median', 'max'])
+    print(group_stats)
+    
+    # Perform ANOVA to check if groups are significantly different
+    categories = df_subset[cat_col].unique()
+    
+    if len(categories) > 1:  # ANOVA requires at least 2 groups
+        samples = [df_subset[df_subset[cat_col] == cat][num_col].dropna() for cat in categories]
+        f_stat, p_value = stats.f_oneway(*samples)
+        
+        print(f"\nANOVA Test Results:")
+        print(f"F-statistic: {f_stat:.4f}")
+        print(f"p-value: {p_value:.4f}")
+        
+        if p_value < 0.05:
+            print(f"There is a statistically significant difference in {num_col} across {cat_col} groups (p < 0.05).")
+        else:
+            print(f"There is no statistically significant difference in {num_col} across {cat_col} groups (p >= 0.05).")
