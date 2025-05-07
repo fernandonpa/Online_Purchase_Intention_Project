@@ -58,3 +58,61 @@ def univariate_numeric(df, column, figsize=(10, 6), bins=20):
     
     if not outliers.empty:
         print(f"Potential outliers detected for {column}: {len(outliers)} values")
+
+def univariate_categorical(df, column, figsize=(10, 6), max_categories=20):
+    """
+    Perform univariate analysis for categorical variables
+    """
+    value_counts = df[column].value_counts()
+    
+    plt.figure(figsize=figsize)
+    
+    # If too many categories, show only the top ones
+    if len(value_counts) > max_categories:
+        top_categories = value_counts.nlargest(max_categories)
+        other_count = value_counts.sum() - top_categories.sum()
+        
+        # Add "Other" category
+        top_categories = pd.concat([top_categories, pd.Series([other_count], index=["Other"])])
+        
+        print(f"Showing top {max_categories} categories for {column} (out of {len(value_counts)} total)")
+        
+        # Create bar plot
+        ax = sns.barplot(x=top_categories.index, y=top_categories.values)
+        plt.title(f'Distribution of {column} (Top {max_categories} categories)')
+    else:
+        # Create bar plot for all categories
+        ax = sns.barplot(x=value_counts.index, y=value_counts.values)
+        plt.title(f'Distribution of {column}')
+    
+    # Rotate x-labels for better readability
+    plt.xticks(rotation=45, ha='right')
+    plt.xlabel('Categories')
+    plt.ylabel('Count')
+    
+    # Add percentage labels on top of bars
+    total = len(df)
+    for i, p in enumerate(ax.patches):
+        percentage = 100 * p.get_height() / total
+        ax.annotate(f'{percentage:.1f}%', 
+                    (p.get_x() + p.get_width() / 2., p.get_height()),
+                    ha = 'center', va = 'bottom', 
+                    xytext = (0, 5), textcoords = 'offset points')
+    
+    plt.tight_layout()
+    plt.show()
+    
+    # Print statistics
+    print(f"\nStatistics for {column}:")
+    print(f"Total count: {df[column].count()}")
+    print(f"Number of unique values: {df[column].nunique()}")
+    print(f"Missing values: {df[column].isna().sum()} ({df[column].isna().mean()*100:.2f}%)")
+    
+    # Print frequency table
+    if len(value_counts) <= 20:
+        freq_df = pd.DataFrame({
+            'Count': value_counts,
+            'Percentage': (value_counts / total * 100).round(2)
+        })
+        print("\nFrequency Table:")
+        print(freq_df)
