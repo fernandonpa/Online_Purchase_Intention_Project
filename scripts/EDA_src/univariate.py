@@ -116,3 +116,47 @@ def univariate_categorical(df, column, figsize=(10, 6), max_categories=20):
         })
         print("\nFrequency Table:")
         print(freq_df)
+
+
+def univariate_binary(df, column, figsize=(10, 5)):
+    """
+    Perform univariate analysis for binary variables
+    """
+    plt.figure(figsize=figsize)
+    
+    # Create pie chart
+    ax1 = plt.subplot(1, 2, 1)
+    value_counts = df[column].value_counts()
+    ax1.pie(value_counts, labels=value_counts.index, autopct='%1.1f%%',
+            startangle=90, explode=[0.05] * len(value_counts))
+    ax1.set_title(f'Distribution of {column}')
+    
+    # Create bar chart
+    ax2 = plt.subplot(1, 2, 2)
+    sns.countplot(x=column, data=df, ax=ax2)
+    ax2.set_title(f'Count of {column}')
+    
+    # Add counts on top of bars
+    for p in ax2.patches:
+        ax2.annotate(f'{int(p.get_height())}', 
+                    (p.get_x() + p.get_width() / 2., p.get_height()),
+                    ha = 'center', va = 'bottom', 
+                    xytext = (0, 5), textcoords = 'offset points')
+    
+    plt.tight_layout()
+    plt.show()
+    
+    # Print statistics
+    total = len(df)
+    print(f"\nStatistics for {column}:")
+    print(f"Total count: {df[column].count()}")
+    print(f"Missing values: {df[column].isna().sum()} ({df[column].isna().mean()*100:.2f}%)")
+    
+    # Print frequency table
+    freq_df = pd.DataFrame({
+        'Value': value_counts.index,
+        'Count': value_counts.values,
+        'Percentage': (value_counts.values / total * 100).round(2)
+    })
+    print("\nFrequency Table:")
+    print(freq_df)
