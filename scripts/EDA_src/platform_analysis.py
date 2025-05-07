@@ -62,6 +62,8 @@ def analyze_purchase_behavior(df):
         
         # Create a logistic regression model
         try:
+            temp_df = df.copy()
+            temp_df.rename(columns={purchase_col: 'purchase_status'}, inplace=True)
             # Select key variables from each construct
             key_vars = []
             for prefix in ['peou_', 'pu_', 'sa_', 'si_', 'att_', 'risk_']:
@@ -74,10 +76,10 @@ def analyze_purchase_behavior(df):
             key_vars.extend([var for var in demo_vars if var in df.columns])
             
             # Build formula
-            formula = f"{purchase_col} ~ " + " + ".join(key_vars)
+            formula = f"purchase_status ~ " + " + ".join(key_vars)
             
             # Fit model
-            model = glm(formula=formula, data=df, family=sm.families.Binomial()).fit()
+            model = glm(formula=formula, data=temp_df, family=sm.families.Binomial()).fit()
             print(model.summary())
         except Exception as e:
             print(f"Could not build logistic regression model: {e}")
