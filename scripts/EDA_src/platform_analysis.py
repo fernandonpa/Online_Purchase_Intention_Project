@@ -81,3 +81,65 @@ def analyze_purchase_behavior(df):
             print(model.summary())
         except Exception as e:
             print(f"Could not build logistic regression model: {e}")
+
+
+def analyze_platform_usage(df):
+    """
+    Analyze platform usage patterns
+    """
+    print("\n" + "="*80)
+    print("ANALYZING PLATFORM USAGE PATTERNS")
+    print("="*80)
+    
+    # Analyze aggregate usage counts
+    usage_cols = ['platform_count', 'pharmacy_count', 'fashion_count', 
+                  'grocery_count', 'automobile_count', 'total_services_used']
+    
+    for col in usage_cols:
+        if col in df.columns:
+            print(f"\nDistribution of {col}:")
+            print(df[col].describe())
+    
+    # Plot distribution of services used
+    plt.figure(figsize=(12, 6))
+    
+    # Distribution of total services
+    if 'total_services_used' in df.columns:
+        plt.subplot(1, 2, 1)
+        sns.histplot(df['total_services_used'], kde=True)
+        plt.title('Distribution of Total Services Used')
+        plt.xlabel('Number of Services')
+        plt.ylabel('Count')
+    
+    # Breakdown by service type
+    plt.subplot(1, 2, 2)
+    service_avgs = []
+    labels = []
+    
+    for col in ['platform_count', 'pharmacy_count', 'fashion_count', 
+                'grocery_count', 'automobile_count']:
+        if col in df.columns:
+            service_avgs.append(df[col].mean())
+            labels.append(col.replace('_count', ''))
+    
+    plt.bar(labels, service_avgs)
+    plt.title('Average Usage by Service Type')
+    plt.ylabel('Average Number Used')
+    plt.xticks(rotation=45)
+    
+    plt.tight_layout()
+    plt.show()
+    
+    # Top platforms analysis
+    platform_cols = [col for col in df.columns if col.startswith('gecp_') and col != 'gecp_None']
+    if platform_cols:
+        platform_usage = df[platform_cols].sum().sort_values(ascending=False)
+        
+        plt.figure(figsize=(12, 6))
+        platform_usage.head(10).plot(kind='bar')
+        plt.title('Top 10 E-Commerce Platforms Used')
+        plt.ylabel('Number of Users')
+        plt.xlabel('Platform')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.show()
