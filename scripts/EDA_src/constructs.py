@@ -33,3 +33,26 @@ def identify_column_types(df):
         'categorical': categorical_cols
     }
 
+def create_construct_groups(df):
+    """
+    Group columns by their prefixes (constructs)
+    """
+    constructs = {
+        'peou': [col for col in df.columns if col.startswith('peou_')],
+        'pu': [col for col in df.columns if col.startswith('pu_')],
+        'sa': [col for col in df.columns if col.startswith('sa_')],
+        'si': [col for col in df.columns if col.startswith('si_')],
+        'att': [col for col in df.columns if col.startswith('att_')],
+        'risk': [col for col in df.columns if col.startswith('risk_')],
+        'opi': [col for col in df.columns if col.startswith('opi_')],
+        'platforms': [col for col in df.columns if col.startswith('gecp_')],
+        'online_pharmacy': [col for col in df.columns if col.startswith('op_')],
+        'fashion_brands': [col for col in df.columns if col.startswith('fabr_')],
+        'grocery_delivery': [col for col in df.columns if col.startswith('gds_')],
+        'automobile': [col for col in df.columns if col.startswith('sos_automobile_')],
+        'demographic': ['gender_encoded', 'age_encoded', 'marital_status_encoded', 
+                       'education_encoded', 'used_online_shopping_encoded'] + 
+                       [col for col in df.columns if col.startswith('prof_')]
+    }
+    return constructs
+
