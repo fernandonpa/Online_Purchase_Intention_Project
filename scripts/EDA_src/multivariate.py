@@ -126,3 +126,92 @@ def pca_analysis(df, columns=None, n_components=2, figsize=(16, 7)):
     print(loadings_df)
     
     return pca, loadings_df
+
+def cluster_analysis(df, columns=None, n_clusters=3, figsize=(15, 5)):
+    """
+    Perform cluster analysis to identify groups in the data
+    """
+    if columns is None:
+        # Use all numeric columns
+        numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns
+        columns = numeric_cols
+    
+    # Prepare the data
+    data = df[columns].dropna()
+    if data.shape[0] < 10:  # Too few observations
+        print("Not enough complete observations for cluster analysis")
+        return
+    
+    X = StandardScaler().fit_transform(data)
+    
+    # Find optimal number of clusters using silhouette score
+    sil_scores = []
+    k_range = range(2, min(6, data.shape[0]))  # Test 2 to 5 clusters
+    
+    for k in k_range:
+        kmeans = KMeans(n_clusters=k, random_state=42)
+        labels = kmeans.fit_predict(X)
+        sil_scores.append(silhouette_score(X, labels))
+    
+    # Find optimal K
+    optimal_k = k_range[np.argmax(sil_scores)]
+    print(f"Optimal number of clusters based on silhouette score: {optimal_k}")
+    
+    # Perform clustering with optimal K
+    kmeans = KMeans(n_clusters=optimal_k, random_state=42)
+    labels = kmeans.fit_predict(X)
+    
+    # Add cluster labels to the original data
+    data_with_clusters = data.copy()
+    data_with_clusters['Cluster'] = labels
+    
+    # Plot results
+    plt.figure(figsize=figsize)
+    
+    # Plot silhouette scores
+    plt.subplot(1, 3, 1)
+    plt.plot(list(k_range), sil_scores, marker='o')
+    plt.xlabel('Number of Clusters')
+    plt.ylabel('Silhouette Score')
+    plt.title('Silhouette Scores for Different k')
+    plt.grid(True)
+    
+    # If we have more than 1 feature, plot clusters
+    if len(columns) >= 2:
+        # Plot clusters on first two features
+        plt.subplot(1, 3, 2)
+        scatter = plt.scatter(data[columns[0]], data[columns[1]], c=labels, cmap='viridis', alpha=0.7)
+        plt.xlabel(columns[0])
+        plt.ylabel(columns[1])
+        plt.title(f'Clusters on First Two Features')
+        plt.colorbar(scatter, label='Cluster')
+        
+        # If we performed PCA, plot clusters on PC space
+        try:
+            pca = PCA(n_components=2)
+            X_pca = pca.fit_transform(X)
+            
+            plt.subplot(1, 3, 3)
+            scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=labels, cmap='viridis', alpha=0.7)
+            plt.xlabel('PC1')
+            plt.ylabel('PC2')
+            plt.title('Clusters in PCA Space')
+            plt.colorbar(scatter, label='Cluster')
+        except:
+            pass
+    
+    plt.tight_layout()
+    plt.show()
+    
+    # Analyze cluster characteristics
+    print("\nCluster Profiles:")
+    cluster_profiles = data_with_clusters.groupby('Cluster').mean()
+    print(cluster_profiles)
+    
+    # Count observations in each cluster
+    cluster_counts = data_with_clusters['Cluster'].value_counts().sort_index()
+    print("\nCluster Sizes:")
+    for cluster, count in cluster_counts.items():
+        print(f"Cluster {cluster}: {count} observations ({count/len(data_with_clusters)*100:.1f}%)")
+    
+    return kmeans, data_with_clusters
