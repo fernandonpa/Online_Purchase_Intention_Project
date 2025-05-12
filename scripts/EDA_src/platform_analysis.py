@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import statsmodels.api as sm
 from statsmodels.formula.api import glm
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Rectangle, FancyBboxPatch
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -177,45 +177,79 @@ def correlation_analysis(df, constructs):
 
 def create_conceptual_model(df, constructs):
     """
-    Create an enhanced visualization of the online purchase intention conceptual model
+    Create a visualization of the online purchase intention conceptual model
     with correlation information and styling improvements
     """
-    from matplotlib.patches import FancyBboxPatch  # Import this for rounded rectangles
+    from matplotlib.patches import FancyBboxPatch
+    
+    # 1. Setup the figure and calculate correlations
+    correlations = _calculate_correlations(df)
+    fig, ax = _setup_figure()
+    
+    # 2. Define and draw the constructs (boxes)
+    constructs_coords = _get_construct_coordinates()
+    _draw_constructs(ax, constructs_coords)
+    
+    # 3. Define and draw relationship arrows
+    arrow_props = _get_arrow_properties()
+    _draw_arrows(ax, arrow_props, correlations)
+    
+    # 4. Add explanatory text and legend
+    _add_legend_and_notes(fig)
+    
+    plt.tight_layout()
+    plt.show()
+    
+    return correlations
 
-    # Create figure with improved size and background
-    plt.figure(figsize=(14, 10), facecolor='#f9f9f9')
-    plt.title('Conceptual Model Visualization', fontsize=20, fontweight='bold', pad=20)
-    
-    # Set up axes with more space
-    ax = plt.gca()
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 10)
-    ax.axis('off')
-    ax.set_facecolor('#f9f9f9')
-    
-    # Calculate correlations between constructs if available
+def _calculate_correlations(df):
+    """Calculate correlations between model constructs"""
     correlations = {}
     construct_avgs = {
         'peou': 'peou_avg', 'pu': 'pu_avg', 'sa': 'sa_avg', 
         'si': 'si_avg', 'att': 'att_avg', 'risk': 'risk_avg'
     }
     
-    # Get correlations with attitude and OPI satisfaction if available
+    # Get column names for key measurements
     attitude_col = 'att_avg' if 'att_avg' in df.columns else None
     opi_col = 'opi_satisfaction' if 'opi_satisfaction' in df.columns else None
+    risk_col = 'risk_avg' if 'risk_avg' in df.columns else None
     
-    # Compute correlations if data available
+    # Compute correlations with attitude
     if attitude_col and all(col in df.columns for col in construct_avgs.values()):
         for construct, col in construct_avgs.items():
             if col in df.columns and attitude_col in df.columns:
                 correlations[f'{construct}_att'] = df[col].corr(df[attitude_col]).round(2)
     
+    # Compute correlations with risk
+    if risk_col and all(col in df.columns for col in construct_avgs.values()):
+        for construct, col in construct_avgs.items():
+            if col in df.columns and risk_col in df.columns and construct != 'risk':
+                correlations[f'{construct}_risk'] = df[col].corr(df[risk_col]).round(2)
+    
+    # Compute correlations with OPI
     if opi_col and attitude_col in df.columns and 'risk_avg' in df.columns:
         correlations['att_opi'] = df[attitude_col].corr(df[opi_col]).round(2)
         correlations['risk_opi'] = df['risk_avg'].corr(df[opi_col]).round(2)
+        
+    return correlations
+
+def _setup_figure():
+    """Create and configure the figure and axes"""
+    fig = plt.figure(figsize=(14, 10), facecolor='#f9f9f9')
+    plt.title('Conceptual Model Visualization', fontsize=20, fontweight='bold', pad=20)
     
-    # Enhanced construct coordinates with more space
-    constructs_coords = {
+    ax = plt.gca()
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 10)
+    ax.axis('off')
+    ax.set_facecolor('#f9f9f9')
+    
+    return fig, ax
+
+def _get_construct_coordinates():
+    """Define the coordinates and labels for each construct"""
+    return {
         'peou': (2, 8, 'Perceived\nEase of Use'),
         'pu': (2, 6, 'Perceived\nUsefulness'),
         'sa': (2, 4, 'Structural\nAssurance'),
@@ -224,23 +258,25 @@ def create_conceptual_model(df, constructs):
         'risk': (5, 3, 'Perceived\nRisk'),
         'opi': (8, 5, 'Online Purchase\nIntention')
     }
-    
-    # Draw rectangles with improved styling - using FancyBboxPatch instead of Rectangle
+
+def _draw_constructs(ax, constructs_coords):
+    """Draw the construct boxes with appropriate styling"""
     for construct, (x, y, label) in constructs_coords.items():
-        if construct == 'att' or construct == 'risk':
-            # Highlight mediator variables
+        # Determine appearance based on construct type
+        if construct in ['att', 'risk']:
+            # Mediator variables
             facecolor = '#ADD8E6'  # Light blue
             edgewidth = 2
         elif construct == 'opi':
-            # Highlight outcome variable
+            # Outcome variable
             facecolor = '#90EE90'  # Light green
             edgewidth = 2
         else:
             # Predictor variables
             facecolor = '#E6E6FA'  # Lavender
             edgewidth = 1.5
-            
-        # Use FancyBboxPatch instead of Rectangle for rounded corners
+        
+        # Create and add the box
         rect = FancyBboxPatch(
             (x-1, y-0.5), 2, 1, 
             boxstyle="round,pad=0.3",
@@ -252,36 +288,32 @@ def create_conceptual_model(df, constructs):
         )
         ax.add_patch(rect)
         ax.text(x, y, label, ha='center', va='center', fontweight='bold', fontsize=10)
-    
-    # Define arrow properties with correlation information
-    arrow_props = [
+
+def _get_arrow_properties():
+    """Define the properties for relationship arrows"""
+    return [
         # Format: (start_x, start_y, end_x, end_y, correlation_key, is_positive)
         (3, 8, 5, 5.2, 'peou_att', True),    # PEOU -> ATT
         (3, 6, 5, 4.8, 'pu_att', True),      # PU -> ATT
         (3, 4, 5, 4.4, 'sa_att', True),      # SA -> ATT
         (3, 2, 5, 3.6, 'si_att', True),      # SI -> ATT
-        (3, 2.2, 5, 3.0, None, True),        # SI -> RISK
+        (3, 2.2, 5, 3.0, 'si_risk', True),   # SI -> RISK
         (6, 5, 8, 5.2, 'att_opi', True),     # ATT -> OPI
-        (6, 3, 8, 4.8, 'risk_opi', False)    # RISK -> OPI
+        (6, 3, 8, 4.8, 'risk_opi', False),   # RISK -> OPI
+        # Additional links
+        (3, 8, 5, 3.3, 'peou_risk', False),  # PEOU -> RISK
+        (3, 6, 5, 3.2, 'pu_risk', False),    # PU -> RISK
+        (3, 4, 5, 3.1, 'sa_risk', False)     # SA -> RISK
     ]
-    
-    # Draw arrows with correlation information and improved styling
+
+def _draw_arrows(ax, arrow_props, correlations):
+    """Draw the relationship arrows with correlation information"""
     for x1, y1, x2, y2, corr_key, is_positive in arrow_props:
-        # Get correlation if available
+        # Get correlation value if available
         corr_value = correlations.get(corr_key, None)
         
-        # Determine arrow width based on correlation strength (or default if not available)
-        if corr_value is not None:
-            # Scale width from 1 to 3 based on correlation strength
-            width = 0.5 + abs(corr_value) * 2.5
-            # Adjust arrow color based on correlation direction
-            if corr_value > 0:
-                color = 'darkblue' if is_positive else 'red'
-            else:
-                color = 'red' if is_positive else 'darkblue'
-        else:
-            width = 1.5  # Default width
-            color = 'black'
+        # Determine arrow styling based on correlation
+        width, color = _get_arrow_style(corr_value, is_positive)
             
         # Draw the arrow
         ax.annotate(
@@ -301,24 +333,46 @@ def create_conceptual_model(df, constructs):
         
         # Add correlation label if available
         if corr_value is not None:
-            # Calculate midpoint for label position with slight offset
-            mid_x = (x1 + x2) / 2
-            mid_y = (y1 + y2) / 2
-            offset_x = 0.2
-            offset_y = 0.2 if y2 > y1 else -0.2
-            
-            # Add correlation text
-            ax.text(
-                mid_x + offset_x, mid_y + offset_y,
-                f'r = {corr_value}',
-                fontsize=8,
-                color=color,
-                fontweight='bold',
-                ha='center',
-                va='center',
-                bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.2')
-            )
+            _add_correlation_label(ax, x1, y1, x2, y2, corr_value, color)
+
+def _get_arrow_style(corr_value, is_positive):
+    """Determine arrow width and color based on correlation"""
+    if corr_value is not None:
+        # Scale width from 1 to 3 based on correlation strength
+        width = 0.5 + abs(corr_value) * 2.5
+        # Adjust arrow color based on correlation direction
+        if corr_value > 0:
+            color = 'darkblue' if is_positive else 'red'
+        else:
+            color = 'red' if is_positive else 'darkblue'
+    else:
+        width = 1.5  # Default width
+        color = 'black'
+        
+    return width, color
+
+def _add_correlation_label(ax, x1, y1, x2, y2, corr_value, color):
+    """Add a label showing the correlation value"""
+    # Calculate midpoint for label position with slight offset
+    mid_x = (x1 + x2) / 2
+    mid_y = (y1 + y2) / 2
+    offset_x = 0.2
+    offset_y = 0.2 if y2 > y1 else -0.2
     
+    # Add correlation text
+    ax.text(
+        mid_x + offset_x, mid_y + offset_y,
+        f'r = {corr_value}',
+        fontsize=8,
+        color=color,
+        fontweight='bold',
+        ha='center',
+        va='center',
+        bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.2')
+    )
+
+def _add_legend_and_notes(fig):
+    """Add legend and explanatory notes to the figure"""
     # Add legend explaining the model
     legend_text = (
         'Model Components:\n'
@@ -328,21 +382,16 @@ def create_conceptual_model(df, constructs):
         '• Blue arrows: Positive relationships\n'
         '• Red arrows: Negative relationships'
     )
-    plt.figtext(0.02, 0.02, legend_text, fontsize=9, 
-                bbox=dict(facecolor='white', alpha=0.8, boxstyle='round,pad=0.5'))
+    fig.text(0.02, 0.02, legend_text, fontsize=9, 
+             bbox=dict(facecolor='white', alpha=0.8, boxstyle='round,pad=0.5'))
     
     # Add a research context note
     note_text = (
         'Note: This model illustrates key relationships in online purchase intention.\n'
         'Arrows indicate causal paths, with correlation values (r) where available.'
     )
-    plt.figtext(0.98, 0.02, note_text, fontsize=9, ha='right',
-                bbox=dict(facecolor='white', alpha=0.8, boxstyle='round,pad=0.5'))
-    
-    plt.tight_layout()
-    plt.show()
-    
-    return correlations
+    fig.text(0.98, 0.02, note_text, fontsize=9, ha='right',
+            bbox=dict(facecolor='white', alpha=0.8, boxstyle='round,pad=0.5'))
 
 # Use in the multivariate_analysis function
 def multivariate_analysis(df, constructs):
