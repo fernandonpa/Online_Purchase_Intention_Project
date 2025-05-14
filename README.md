@@ -83,18 +83,18 @@ pip install -r requirements.txt
 
 ## 📋 Authors
 
-- Team Member 1
-- Team Member 2
-- Team Member 3
-- Team Member 4
-- Team Member 5
+- 220168R – FERNANDO N.P.A.
+- 220153R – EKANAYAKA D.M.Y.N.B.
+- 220222E – HENDALAGE D.S.D.
+- 220263E – JAYASINGHE M.M.S.
+- 220731M – WITHANAGE W.I.N
 
 ---
 
 ## 🤝 Acknowledgements
 
 - University course: Introduction to Data Science (CS3121)
-- Instructor:
-- Reference Paper:
+- Lecturer: Dr. Nisansa de Silva
+- Lecturer: Dr. Sandareka Wickramanayake
 
 ---
